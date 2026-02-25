@@ -1,18 +1,34 @@
-import { Button } from "primereact/button";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "./firebase";
+import { useEffect, useState } from "react";
+import { addClient, fetchClients, type Client } from "./services/clients";
+import ClientForm from "./components/ClientForm";
+import ClientList from "./components/ClientList";
 
 function App() {
-  const salvar = async () => {
-    await addDoc(collection(db, "clients"), {
-      nome: "Prime + Firebase",
-      createdAt: serverTimestamp(),
-    });
+  const [clients, setClients] = useState<Client[]>([]);
+
+  const load = async () => {
+    const data = await fetchClients();
+    setClients(data);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleAdd = async (c: {
+    name: string;
+    phone: string;
+    dueDay: number;
+  }) => {
+    await addClient(c);
+    await load();
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <Button label="Salvar no Firestore" onClick={salvar} />
+      <h2>Cadastro de Clientes</h2>
+      <ClientForm onAdd={handleAdd} />
+      <ClientList clients={clients} onUpdated={load} />
     </div>
   );
 }
