@@ -1,42 +1,253 @@
-#root {
-  max-width: 1280px;
+/* ── Layout ── */
+.app {
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+  background: #1e40af;
+  color: white;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  font-size: 2rem;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.header-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+/* ── Stats strip ── */
+.stats-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  max-width: 960px;
+  margin: 1rem auto 0;
+}
+
+.stat {
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.stat.danger   { background: #fee2e2; color: #dc2626; }
+.stat.warning  { background: #fef3c7; color: #b45309; }
+.stat.success  { background: #d1fae5; color: #059669; }
+.stat.neutral  { background: rgba(255, 255, 255, 0.2); color: white; }
+
+/* ── Main ── */
+.app-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ── Empty / loading ── */
+.empty-state {
   text-align: center;
+  padding: 5rem 1rem;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.empty-state .pi {
+  font-size: 3rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.state-msg {
+  text-align: center;
+  color: #64748b;
+  padding: 3rem;
+}
+
+/* ── Card grid ── */
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Client card ── */
+.client-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: box-shadow 0.15s;
+}
+
+.client-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.client-card.status-overdue,
+.client-card.status-due-today {
+  border-left-color: #ef4444;
+}
+
+.client-card.status-due-soon {
+  border-left-color: #f59e0b;
+}
+
+.client-card.status-ok {
+  border-left-color: #3b82f6;
+}
+
+.client-card.status-paid {
+  border-left-color: #10b981;
+  opacity: 0.8;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.card-phone {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.card-due {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.due-date {
+  color: #94a3b8;
+}
+
+.card-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.card-actions .p-button {
+  flex: 1;
+  justify-content: center;
+}
+
+/* ── Form ── */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.field-hint {
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.header-link{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header-link-external {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.header-link-external:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .card-actions {
+    flex-direction: column;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

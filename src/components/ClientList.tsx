@@ -1,90 +1,186 @@
-import type { Client } from "../services/clients";
-import { markPaidThisMonth } from "../services/clients";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import { useRef, useState } from "react";
+import { Tag } from "primereact/tag";
 import { Button } from "primereact/button";
+import { Toast } from "primereact/toast";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import { doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { db } from "../firebase";
+import type { Client } from "../types";
+import {
+  getClientStatus,
+  STATUS_LABEL,
+  STATUS_SEVERITY,
+  formatDueDate,
+  getWhatsAppUrl,
+} from "../clientStatus";
+import ClientForm from "./ClientForm";
 
-export type Props = {
+interface Props {
   clients: Client[];
-  onUpdated?: () => void; // callback to refresh list
-};
-
-function computeStatus(client: Client): string {
-  const today = new Date();
-  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  if (client.paidUntil && client.paidUntil >= endOfMonth) {
-    return "OK";
-  }
-
-  const dueThisMonth = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    client.dueDay,
-  );
-  // if due day beyond last day of month, fallback to last day
-  const monthLast = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    0,
-  ).getDate();
-  if (client.dueDay > monthLast) {
-    dueThisMonth.setDate(monthLast);
-  }
-
-  if (today > dueThisMonth) {
-    return "vencido";
-  }
-
-  const diff =
-    (dueThisMonth.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-  if (diff <= 3) {
-    return "vencendo";
-  }
-
-  return "normal";
 }
 
-export default function ClientList({ clients, onUpdated }: Props) {
-  const statusBody = (rowData: Client) => {
-    const status = computeStatus(rowData);
-    let color = "inherit";
-    if (status === "vencido")
-      color = "#d32f2f"; // red
-    else if (status === "vencendo")
-      color = "#ed6c02"; // orange
-    else if (status === "OK") color = "#2e7d32"; // green
-    return <span style={{ color }}>{status}</span>;
+function ClientCard({ client }: { client: Client }) {
+  const toast = useRef<Toast>(null);
+  const status = getClientStatus(client);
+  const [editVisible, setEditVisible] = useState(false);
+
+  const markAsPaid = async () => {
+    try {
+      await updateDoc(doc(db, "clients", client.id), {
+        lastPaidAt: Timestamp.now(),
+      });
+      toast.current?.show({
+        severity: "success",
+        summary: "Pago!",
+        detail: `${client.name} marcado como pago`,
+        life: 2000,
+      });
+    } catch {
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail: "Erro ao atualizar",
+        life: 3000,
+      });
+    }
   };
 
-  const actionBody = (rowData: Client) => {
-    const phoneLink = `https://wa.me/${rowData.phone.replace(/[^0-9]/g, "")}`;
-    return (
-      <div style={{ display: "flex", gap: 8 }}>
-        <Button
-          icon="pi pi-whatsapp"
-          className="p-button-success p-button-sm"
-          aria-label="WhatsApp"
-          onClick={() => window.open(phoneLink, "_blank")}
-        />
-        <Button
-          label="Pago"
-          className="p-button-info p-button-sm"
-          onClick={async () => {
-            await markPaidThisMonth(rowData.id);
-            onUpdated && onUpdated();
-          }}
-        />
-      </div>
+  const sendReminder = async () => {
+    window.open(
+      getWhatsAppUrl(client.phone, client.name, client.dueDay),
+      "_blank",
     );
+    try {
+      await updateDoc(doc(db, "clients", client.id), {
+        lastReminderSentAt: Timestamp.now(),
+      });
+    } catch {
+      // silently fail
+    }
+  };
+
+  const handleDelete = () => {
+    confirmDialog({
+      message: `Deseja excluir ${client.name}?`,
+      header: "Confirmar exclusao",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "Excluir",
+      rejectLabel: "Cancelar",
+      acceptClassName: "p-button-danger",
+      accept: async () => {
+        try {
+          await deleteDoc(doc(db, "clients", client.id));
+        } catch {
+          toast.current?.show({
+            severity: "error",
+            summary: "Erro",
+            detail: "Erro ao excluir",
+            life: 3000,
+          });
+        }
+      },
+    });
+  };
+
+  const fmt = (ts?: Timestamp) => {
+    if (!ts) return "—";
+    return ts.toDate().toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
   };
 
   return (
-    <DataTable value={clients} stripedRows responsiveLayout="scroll">
-      <Column field="name" header="Nome" />
-      <Column field="phone" header="Telefone" />
-      <Column field="dueDay" header="Dia" />
-      <Column header="Status" body={statusBody} />
-      <Column header="Ações" body={actionBody} />
-    </DataTable>
+    <>
+      <Toast ref={toast} />
+      <ClientForm
+        visible={editVisible}
+        onHide={() => setEditVisible(false)}
+        client={client}
+      />
+      <div className={`client-card status-${status}`}>
+        <div className="card-header">
+          <Tag
+            value={STATUS_LABEL[status]}
+            severity={STATUS_SEVERITY[status]}
+          />
+          <Button
+            icon="pi pi-pencil"
+            rounded
+            text
+            severity="secondary"
+            size="small"
+            onClick={() => setEditVisible(true)}
+            aria-label="Editar cliente"
+          />
+          <Button
+            icon="pi pi-trash"
+            rounded
+            text
+            severity="danger"
+            size="small"
+            onClick={handleDelete}
+            aria-label="Excluir cliente"
+          />
+        </div>
+
+        <div className="card-name">{client.name}</div>
+
+        <div className="card-description">
+          <i className="pi pi-copy" /> {client.description}
+        </div>
+
+        <div className="card-phone">
+          <i className="pi pi-phone" />
+          {client.phone}
+        </div>
+
+        <div className="card-due">
+          <i className="pi pi-calendar" />
+          Vence todo dia <strong>{client.dueDay}</strong>
+          <span className="due-date">
+            {" "}
+            &middot; {formatDueDate(client.dueDay)}
+          </span>
+        </div>
+
+        <div className="card-meta">
+          <span>Pago: {fmt(client.lastPaidAt)}</span>
+          <span>Lembrete: {fmt(client.lastReminderSentAt)}</span>
+        </div>
+
+        <div className="card-actions">
+          <Button
+            label="Marcar Pago"
+            icon="pi pi-check"
+            severity="success"
+            size="small"
+            disabled={status === "paid"}
+            onClick={markAsPaid}
+          />
+          <Button
+            label="Enviar Lembrete"
+            icon="pi pi-whatsapp"
+            severity="secondary"
+            size="small"
+            onClick={sendReminder}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function ClientList({ clients }: Props) {
+  return (
+    <>
+      <ConfirmDialog />
+      <div className="clients-grid">
+        {clients.map((client) => (
+          <ClientCard key={client.id} client={client} />
+        ))}
+      </div>
+    </>
   );
 }
