@@ -66,7 +66,7 @@ export default function App() {
             />
             <a
               className="header-link-external"
-              href="https://personalgestor.click/#/dashboard"
+              href=" http://lookdefense.top"
               target="_blank"
               rel="noopener noreferrer"
             >
